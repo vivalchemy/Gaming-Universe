@@ -7,28 +7,47 @@ import PropTypes from 'prop-types';
 import '../App.css'; // Add custom styles
 
 // Sun Component (center of attention)
-const Sun = () => (
-    <mesh>
-        <sphereGeometry args={[1.5, 32, 32]} />
-        <meshStandardMaterial emissive="#FFCC00" emissiveIntensity={1.5} />
-    </mesh>
-);
+const Sun = ({ isGrowing, isGameOver }) => {
+    const sunRef = useRef();
+    const maxScale = 3; // Define a maximum scale for the sun
+
+    useFrame(({ clock }) => {
+        if (isGrowing && !isGameOver) {
+            const scale = 1 + Math.min(clock.getElapsedTime() * 0.1, maxScale - 1);
+            sunRef.current.scale.set(scale, scale, scale);
+        }
+    });
+
+    return (
+        <mesh ref={sunRef}>
+            <sphereGeometry args={[0.5, 64, 64]} />
+            <meshStandardMaterial emissive="#FFCC00" emissiveIntensity={1} />
+        </mesh>
+    );
+};
 
 // Planet Component (hover effect for interactivity)
 const Planet = ({ position, color, speed, hasRings }) => {
     const planetRef = useRef();
+    const ringRef = useRef();
+    const maxScale = 3;
 
     useFrame(({ clock }) => {
         const t = clock.getElapsedTime() * speed;
         planetRef.current.position.x = position[0] * Math.cos(t);
         planetRef.current.position.z = position[0] * Math.sin(t);
         planetRef.current.rotation.y += 0.01;
+
+        if (hasRings) {
+            const scale = 1 + Math.min(clock.getElapsedTime() * 0.1, maxScale - 1);
+            ringRef.current.scale.set(scale, scale, scale);
+        }
     });
 
     return (
         <group>
             {hasRings && (
-                <mesh>
+                <mesh ref={ringRef}>
                     <ringGeometry args={[1.8, 2, 32]} />
                     <meshStandardMaterial color="#FFA500" side={THREE.DoubleSide} />
                 </mesh>
@@ -48,9 +67,8 @@ const Asteroids = ({ asteroidRefs }) => {
             if (ref.current) {
                 ref.current.rotation.x += 0.01;
                 ref.current.rotation.y += 0.01;
-                ref.current.position.z += 0.05; // Move toward the camera
+                ref.current.position.z += 0.04; // Move toward the camera
 
-                // Reset the asteroid position if it's too close (past the camera)
                 if (ref.current.position.z > 5) {
                     ref.current.position.z = Math.random() * -20 - 10; // Reset further away in space
                     ref.current.position.x = Math.random() * 10 - 5;
@@ -76,8 +94,35 @@ const Asteroids = ({ asteroidRefs }) => {
     );
 };
 
+// Coin Component for collecting
+const Coin = ({ position, onCollect }) => {
+    const coinRef = useRef();
+
+    useFrame(() => {
+        coinRef.current.rotation.y += 0.05; // Rotate the coin
+        coinRef.current.position.z += 0.02; // Move coin forward slowly
+        // Reset position when the coin moves too far
+        if (coinRef.current.position.z > 5) {
+            coinRef.current.position.set(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * -20 - 10);
+        }
+    });
+
+    return (
+        <mesh
+            ref={coinRef}
+            position={position}
+            onClick={onCollect}
+
+        // Trigger onCollect when clicked
+        >
+            <torusGeometry args={[0.2, 0.05, 16, 100]} />
+            <meshStandardMaterial color="gold" />
+        </mesh>
+    );
+};
+
 // Spaceship Component with interactivity and collision detection
-const Spaceship = ({ asteroidRefs, setGameOver }) => {
+const Spaceship = ({ asteroidRefs, coinRefs, setGameOver, setScore }) => {
     const spaceshipRef = useRef();
     const velocity = useRef({ x: 0, y: 0 });
     const [isBurning, setIsBurning] = useState(false);
@@ -93,8 +138,19 @@ const Spaceship = ({ asteroidRefs, setGameOver }) => {
         asteroidRefs.current.forEach((asteroidRef) => {
             if (asteroidRef.current) {
                 const distance = spaceshipRef.current.position.distanceTo(asteroidRef.current.position);
-                if (distance < 0.5) { // Collision threshold
+                if (distance < 0.5) {
                     setGameOver(true); // Trigger Game Over
+                }
+            }
+        });
+
+        // Check for collisions with coins
+        coinRefs.current.forEach((coinRef) => {
+            if (coinRef.current) {
+                const distance = spaceshipRef.current.position.distanceTo(coinRef.current.position);
+                if (distance < 0.3) { // Collision threshold for collecting coins
+                    setScore((prevScore) => prevScore + 1); // Increase score
+                    coinRef.current.position.set(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * -20 - 10); // Move coin to a new position
                 }
             }
         });
@@ -166,12 +222,15 @@ const Spaceship = ({ asteroidRefs, setGameOver }) => {
                 <coneGeometry args={[0.1, 0.5, 16]} />
                 <meshStandardMaterial color="#FF5733" />
             </mesh>
-            {/* Burning fuel effect */}
             {isBurning && (
                 <group position={[0, -0.3, -0.5]}>
                     <mesh>
-                        <coneGeometry args={[0.1, 0.3, 16]} />
-                        <meshStandardMaterial color="orange" transparent opacity={0.6} />
+                        <coneGeometry args={[0.05, 0.2, 16]} />
+                        <meshStandardMaterial color="#FFA500" />
+                    </mesh>
+                    <mesh position={[0, 0.1, 0]}>
+                        <coneGeometry args={[0.05, 0.2, 16]} />
+                        <meshStandardMaterial color="#FFA500" />
                     </mesh>
                 </group>
             )}
@@ -179,13 +238,15 @@ const Spaceship = ({ asteroidRefs, setGameOver }) => {
     );
 };
 
-// Main NASA-Themed Hero Section
+// Hero Component (main game area)
 const Hero = () => {
     const cameraRef = useRef();
-    const [showRules, setShowRules] = useState(false);
-    const [missionStarted, setMissionStarted] = useState(false);
-    const [gameOver, setGameOver] = useState(false);
+    const [missionStarted, setMissionStarted] = useState(false); // State to track if the mission has started
+    const [showRules, setShowRules] = useState(true); // State to toggle rules visibility
+    const [gameOver, setGameOver] = useState(false); // State to track if the game is over
+    const [score, setScore] = useState(0); // State to track the score
     const asteroidRefs = useRef(Array.from({ length: 10 }, () => useRef())); // Store asteroid refs
+    const coinRefs = useRef(Array.from({ length: 5 }, () => useRef())); // Store coin refs
 
     useEffect(() => {
         gsap.fromTo(
@@ -201,22 +262,32 @@ const Hero = () => {
     };
 
     return (
-        <div className="hero-container h-screen relative bg-space-background"> {/* Custom NASA background */}
+        <div className="hero-container h-screen relative bg-space-background">
             <Canvas camera={{ position: [0, 0, 8], fov: 50 }} ref={cameraRef}>
                 <ambientLight intensity={0.5} />
                 <pointLight position={[5, 5, 5]} />
                 <Stars />
                 <Suspense fallback={null}>
-                    <Sun />
-                    <Planet position={[2, 0]} color="blue" speed={0.5} />
-                    <Planet position={[3.5, 0]} color="red" speed={0.8} hasRings />
-                    <Planet position={[1, 0]} color="green" speed={0.4} />
+                    <Sun isGrowing={missionStarted} isGameOver={gameOver} />
                     <Asteroids asteroidRefs={asteroidRefs} />
-                    {missionStarted && !gameOver && <Spaceship asteroidRefs={asteroidRefs} setGameOver={setGameOver} />}
+                    {missionStarted && !gameOver && (
+                        <>
+                            <Spaceship asteroidRefs={asteroidRefs} coinRefs={coinRefs} setGameOver={setGameOver} setScore={setScore} />
+                            {coinRefs.current.map((_, index) => (
+                                <Coin
+                                    key={index}
+                                    position={[Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * -20 - 10]}
+                                    onCollect={() => {
+                                        setCoinsCollected((prev) => prev + 1); // Increase coins collected
+                                        setScore((prevScore) => prevScore + 1); // Increase score
+                                    }}
+                                />
+                            ))}
+                        </>
+                    )}
                 </Suspense>
                 <OrbitControls />
             </Canvas>
-
             {!missionStarted && (
                 <div className="intro-text absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col z-10 text-white">
                     <h1 className="text-5xl font-bold mb-5">NASA Space Mission</h1>
@@ -232,6 +303,7 @@ const Hero = () => {
             {missionStarted && gameOver && (
                 <div className="game-over absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col z-10 text-white">
                     <h1 className="text-5xl font-bold mb-5">Game Over</h1>
+                    <p className="text-2xl mb-5">Your Score: {score}</p>
                     <button
                         className="bg-red-500 text-white px-6 py-3 rounded hover:bg-red-600"
                         onClick={() => window.location.reload()}
@@ -244,4 +316,18 @@ const Hero = () => {
     );
 };
 
+// Prop Types for validation
+Planet.propTypes = {
+    position: PropTypes.array.isRequired,
+    color: PropTypes.string.isRequired,
+    speed: PropTypes.number.isRequired,
+    hasRings: PropTypes.bool.isRequired,
+};
+
+Coin.propTypes = {
+    position: PropTypes.array.isRequired,
+    onCollect: PropTypes.func.isRequired,
+};
+
+// Default export
 export default Hero;
