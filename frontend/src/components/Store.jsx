@@ -109,6 +109,10 @@ const SpaceStore = () => {
           },
         });
 
+        if (response.status === 401) {
+          navigate('/auth');
+        }
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -144,10 +148,17 @@ const SpaceStore = () => {
         credentials: 'include'
       });
 
+      if (response.status === 401) {
+        navigate('/auth');
+      }
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to purchase item');
       }
+
+      const data = await response.json();
+      const { userCoins } = data;
 
       // Refresh items after purchase
       const updatedUserCoins = userCoins - item.cost;
@@ -168,9 +179,14 @@ const SpaceStore = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+
         body: JSON.stringify({ itemName: item.name }),
         credentials: 'include'
       });
+
+      if (response.status === 401) {
+        navigate('/auth');
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -235,7 +251,7 @@ const SpaceStore = () => {
         <div className="space-y-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Space Station Store
+              Space Station Store.<br />Coins Left: {userCoins}
             </h1>
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
           </div>

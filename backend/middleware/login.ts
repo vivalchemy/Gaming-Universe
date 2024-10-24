@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import path from "path";
 import jwt from 'jsonwebtoken'; // Import jsonwebtoken
+import path from 'path';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key'; // Set the secret key for JWT
 
@@ -11,7 +11,6 @@ const isLoggedIn = (req: Request, res: Response, next: NextFunction) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-      //console.log('Token verified in middleware:', decoded);
       req.userId = decoded.userId; // Assign the userId to the request object
       return next(); // User is logged in, proceed to the next middleware or route
     } catch (error) {
@@ -19,8 +18,9 @@ const isLoggedIn = (req: Request, res: Response, next: NextFunction) => {
     }
   }
 
-  // If the token is not valid or missing, serve the signup page
-  return res.sendFile(path.join(__dirname, '../static', 'signup.html'));
+  // If the token is not valid or missing, send a redirect response to the frontend
+  return res.status(401).json({ redirect: 'http://localhost:5173/auth' });
 };
 
 export default isLoggedIn;
+

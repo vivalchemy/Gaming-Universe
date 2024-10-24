@@ -10,11 +10,24 @@ const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1d'; // Set the expiration
 
 
 // Route for checking login status
-router.get('/', isLoggedIn, async (req: Request, res: Response): Promise<void> => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   const token = req.cookies.token;
-  const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
 
-  res.sendFile(path.join(__dirname, '../static', 'purchase.html'));
+  if (!token) {
+    // If no token exists, respond with a redirect URL
+    res.status(401).json({ redirect: 'http://localhost:5173/auth' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+
+    // User is logged in, you can now handle the request further
+    res.status(200).json({ message: 'User is logged in', userId: decoded.userId });
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    // On token verification failure, send redirect URL to the frontend
+    res.status(401).json({ redirect: 'http://localhost:5173/auth' });
+  }
 });
 
 // Signup route
