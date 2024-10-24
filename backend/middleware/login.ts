@@ -11,7 +11,8 @@ const isLoggedIn = (req: Request, res: Response, next: NextFunction) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-      console.log('Token verified in middleware:', decoded);
+      //console.log('Token verified in middleware:', decoded);
+      req.userId = decoded.userId; // Assign the userId to the request object
       return next(); // User is logged in, proceed to the next middleware or route
     } catch (error) {
       console.error('Token verification failed:', error);

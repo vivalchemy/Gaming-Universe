@@ -10,12 +10,17 @@ import Saturn from "./components/Saturn"
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import Leaderboard from "./components/Leaderboard"
 import Store from "./components/Store"
+import Auth from "./components/Auth"
 
 const App = () => {
   const router = createBrowserRouter([
     {
       path: "/",
       element: <Hero />
+    },
+    {
+      path: "/auth",
+      element: <Auth />
     },
     {
       path: "/leaderboard",

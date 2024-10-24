@@ -91,31 +91,41 @@ const SearchBar = ({ value, onChange }) => (
 
 // Main Store Component
 const SpaceStore = () => {
-  const router = useNavigate();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [items, setItems] = useState([]);
+  const [userCoins, setUserCoins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await fetch('http://localhost:3000/store/get-items-with-user-info');
+        setLoading(true);
+        const response = await fetch('/api/store/get-items-with-user-info', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
         if (!response.ok) {
-          throw new Error('Failed to fetch items');
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const data = await response.json();
-        setItems(data);
-        setLoading(false);
+
+        setItems(data.items);
+        setUserCoins(data.userCoins); // Assuming userCoins is managed in state
       } catch (err) {
         console.error('Failed to fetch items:', err);
         setError('Failed to fetch items');
+      } finally {
         setLoading(false);
       }
-    };
-
+    }
     fetchItems();
-  }, []);
+  }, [])
 
   const filteredItems = useMemo(() => {
     return items.filter(item =>
@@ -123,14 +133,65 @@ const SpaceStore = () => {
     );
   }, [items, searchQuery]);
 
-  const handleBuy = (item) => {
-    console.log('Buying item:', item.name);
-    // Add your buy logic here
+  const handleBuy = async (item) => {
+    try {
+      const response = await fetch('/api/store/purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ itemName: item.name }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to purchase item');
+      }
+
+      // Refresh items after purchase
+      const updatedUserCoins = userCoins - item.cost;
+      setUserCoins(updatedUserCoins);
+
+      // Show success message
+      alert('Item purchased successfully!');
+    } catch (err) {
+      console.error('Error purchasing item:', err);
+      alert(err.message);
+    }
   };
 
-  const handleUse = (item) => {
-    console.log('Using item:', item.name);
-    // Add your use logic here
+  const handleUse = async (item) => {
+    try {
+      const response = await fetch('/api/store/use-item', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ itemName: item.name }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to use item');
+      }
+
+      // Refresh items after using
+      const updatedItems = items.map(i => {
+        if (i.id === item.id) {
+          return { ...i, count: i.count - 1 };
+        }
+        return i;
+      });
+      setItems(updatedItems);
+
+      // Show success message
+      alert('Item used successfully!');
+    } catch (err) {
+      console.error('Error using item:', err);
+      alert(err.message);
+    }
   };
 
   const getRandomStars = () => {
@@ -164,7 +225,7 @@ const SpaceStore = () => {
 
       <div className="container mx-auto p-4 md:p-8 relative z-10">
         <button
-          onClick={() => { navigate('/') }}
+          onClick={() => navigate('/')}
           className="flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors mb-6"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -211,4 +272,3 @@ const SpaceStore = () => {
 };
 
 export default SpaceStore;
-

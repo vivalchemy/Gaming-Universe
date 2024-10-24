@@ -12,29 +12,18 @@ interface RunRecord extends RecordModel {
   finished_at: string | null;
 }
 
-// Input validation schemas
-const createRunSchema = z.object({
-  id: z.string().min(1),
-});
 
 const updateLevelSchema = z.object({
   runId: z.string().min(1),
-  userId: z.string().min(1),
 });
 
 const updateProgressSchema = z.object({
-  id: z.string().min(1),
-  userId: z.string().min(1),
+  runId: z.string().min(1),
   increment: z.number().min(0),
-});
-
-const userIdSchema = z.object({
-  userId: z.string().min(1),
 });
 
 const getRunSchema = z.object({
   runId: z.string().min(1),
-  userId: z.string().min(1),
 });
 
 const router = Router();
@@ -52,11 +41,11 @@ const handleError = (error: unknown, res: Response) => {
 router.post('/create', async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('Creating a new run...');
-    const { id } = createRunSchema.parse(req.body);
-    console.log(`User ID: ${id}`);
+    const userId = req.userId
+    console.log(`User ID: ${userId}`);
 
     const data = {
-      user: id,
+      user: userId,
       level: 1,
       progress: 0,
       started_at: new Date().toISOString(),
@@ -75,7 +64,12 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
 router.patch('/level', async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('Updating level...');
-    const { runId, userId } = updateLevelSchema.parse(req.body);
+    const userId = req.userId
+    //
+    //
+    const { runId } = updateLevelSchema.parse(req.body);
+    //
+    //
     console.log(`Run ID: ${runId}, User ID: ${userId}`);
 
     const record = await pb.collection('runs').getOne<RunRecord>(runId);
@@ -106,10 +100,15 @@ router.patch('/level', async (req: Request, res: Response): Promise<void> => {
 router.patch('/progress', async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('Updating progress...');
-    const { id, increment, userId } = updateProgressSchema.parse(req.body);
-    console.log(`Run ID: ${id}, User ID: ${userId}, Increment: ${increment}`);
+    const userId = req.userId
+    //
+    //
+    const { runId, increment } = updateProgressSchema.parse(req.body);
+    //
+    //
+    console.log(`Run ID: ${runId}, User ID: ${userId}, Increment: ${increment}`);
 
-    const record = await pb.collection('runs').getOne<RunRecord>(id);
+    const record = await pb.collection('runs').getOne<RunRecord>(runId);
     console.log('Fetched record:', record);
 
     if (record.user !== userId) {
@@ -133,7 +132,7 @@ router.patch('/progress', async (req: Request, res: Response): Promise<void> => 
       newProgress = 0;
     }
 
-    const updatedRecord = await pb.collection('runs').update<RunRecord>(id, {
+    const updatedRecord = await pb.collection('runs').update<RunRecord>(runId, {
       level: updatedLevel,
       progress: newProgress
     });
@@ -145,10 +144,10 @@ router.patch('/progress', async (req: Request, res: Response): Promise<void> => 
 });
 
 // Get all runs for user
-router.get('/user/:userId', async (req: Request, res: Response): Promise<void> => {
+router.get('/user', async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('Fetching all runs for user...');
-    const { userId } = userIdSchema.parse({ userId: req.params.userId });
+    const userId = req.userId
     console.log(`User ID: ${userId}`);
 
     const records = await pb.collection('runs').getFullList<RunRecord>({
@@ -163,10 +162,11 @@ router.get('/user/:userId', async (req: Request, res: Response): Promise<void> =
 });
 
 // Get latest run
-router.get('/latest/:userId', async (req: Request, res: Response): Promise<void> => {
+router.get('/latest', async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('Fetching latest run...');
-    const { userId } = userIdSchema.parse({ userId: req.params.userId });
+    const userId = req.userId
+    console.log(userId)
     console.log(`User ID: ${userId}`);
 
     const records = await pb.collection('runs').getList<RunRecord>(1, 1, {
@@ -187,12 +187,12 @@ router.get('/latest/:userId', async (req: Request, res: Response): Promise<void>
 });
 
 // Get specific run
-router.get('/:runId/:userId', async (req: Request, res: Response): Promise<void> => {
+router.get('/:runId', async (req: Request, res: Response): Promise<void> => {
+  const userId = req.userId;
   try {
     console.log('Fetching specific run...');
-    const { runId, userId } = getRunSchema.parse({
+    const { runId } = getRunSchema.parse({
       runId: req.params.runId,
-      userId: req.params.userId
     });
     console.log(`Run ID: ${runId}, User ID: ${userId}`);
 

@@ -6,14 +6,13 @@ import isLoggedIn from '../middleware/login';
 
 const router = express.Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key'; // Set the secret key for JWT
-const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h'; // Set the expiration time for the JWT
+const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1d'; // Set the expiration time for the JWT
 
 
 // Route for checking login status
 router.get('/', isLoggedIn, async (req: Request, res: Response): Promise<void> => {
   const token = req.cookies.token;
   const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-  const username = decoded.userId;
 
   res.sendFile(path.join(__dirname, '../static', 'purchase.html'));
 });
@@ -59,7 +58,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     console.log('User found:', user);
 
     // Generate a JWT for the logged-in user
-    const token = jwt.sign({ username: user.record.id }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+    const token = jwt.sign({ userId: user.record.id }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
     // Set the token in cookies (optional: you can also send it in the response)
     res.cookie('token', token, { httpOnly: true, secure: false }); // Set secure to true in production

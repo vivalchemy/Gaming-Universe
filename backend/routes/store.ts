@@ -1,6 +1,5 @@
 import { Router, type Request, type Response } from 'express';
 import pb from '../pocketbase/config';
-import isLoggedIn from '../middleware/login';
 
 const router = Router();
 
@@ -14,7 +13,7 @@ enum StoreItems {
 }
 
 
-// get user items
+// get items
 router.get("/get-items", async (req: Request, res: Response): Promise<void> => {
   try {
     // Fetching items from the "items" collection
@@ -41,7 +40,8 @@ router.get("/get-items", async (req: Request, res: Response): Promise<void> => {
 
 // Purchase route
 router.post('/purchase', async (req: Request, res: Response): Promise<void> => {
-  const { userId, itemName } = req.body;
+  const userId = req.userId as string;
+  const { itemName } = req.body;
 
   // Check if the item name is valid
   if (!Object.values(StoreItems).includes(itemName)) {
@@ -116,8 +116,8 @@ router.post('/purchase', async (req: Request, res: Response): Promise<void> => {
 });
 
 router.post('/use-item', async (req: Request, res: Response): Promise<void> => {
-  const { userId, itemName } = req.body;
-
+  const userId = req.userId as string;
+  const { itemName } = req.body;
   // Input validation
   if (!userId || !itemName) {
     res.status(400).json({ error: 'Missing required fields: userId and itemName.' });
@@ -191,15 +191,19 @@ router.post('/use-item', async (req: Request, res: Response): Promise<void> => {
 });
 
 
-router.post("/get-items-with-user-info", async (req: Request, res: Response): Promise<void> => {
-  const { userId, coins } = req.body;
-
-  if (!userId || coins === undefined) {
-    res.status(400).json({ error: "Missing required fields: userId and coins." });
-    return;
-  }
+// In store.ts router
+router.get("/get-items-with-user-info", async (req: Request, res: Response): Promise<void> => {
+  const userId = req.userId as string; // This comes from middleware
 
   try {
+    // Fetch user to get current coins
+    const user = await pb.collection('users').getOne(userId);
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
     // Fetch all items from the "items" collection
     const items = await pb.collection("items").getFullList({
       sort: '-cost'  // Sorting items by cost, highest first
@@ -217,23 +221,26 @@ router.post("/get-items-with-user-info", async (req: Request, res: Response): Pr
     });
 
     const userItemsMap = userItems.reduce((map, userItem) => {
-      map[userItem.item] = userItem.count; // Store the count of the items user owns
+      map[userItem.item] = userItem.count;
       return map;
     }, {} as Record<string, number>);
 
     // Prepare the response with item details
     const response = items.map(item => {
       const ownedCount = userItemsMap[item.id] || 0;
-      const canBuy = coins >= item.cost;
+      const canBuy = user.coins >= item.cost;
 
       return {
         ...item,
-        count: ownedCount, // Show 1 if user owns the item, 0 otherwise
-        canBuy, // Set canBuy based on the user's coins
+        count: ownedCount,
+        canBuy,
       };
     });
 
-    res.status(200).json(response);
+    res.status(200).json({
+      items: response,
+      userCoins: user.coins
+    });
   } catch (error) {
     console.error("Error fetching items with user info:", error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
