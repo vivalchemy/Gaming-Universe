@@ -10,18 +10,6 @@ import Planet from './Planet';
 import Asteroids from './Asteroids';
 import Coin from './Coin';
 import Spaceship from './Spaceship';
-// Sun Component (center of attention)
-
-
-// Planet Component (hover effect for interactivity)
-
-
-// Asteroids Component
-
-
-// Coin Component for collecting
-
-// Spaceship Component with interactivity and collision detection
 
 // Hero Component (main game area)
 const Hero = () => {
@@ -52,7 +40,7 @@ const Hero = () => {
                 <ambientLight intensity={0.5} />
                 <pointLight position={[5, 5, 5]} />
                 <Stars />
-                <Suspense fallback={null}>
+                <Suspense fallback={<div>Loading...</div>}>
                     <Sun isGrowing={missionStarted} isGameOver={gameOver} />
                     <Asteroids asteroidRefs={asteroidRefs} />
                     {missionStarted && !gameOver && (
