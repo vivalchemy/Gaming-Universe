@@ -13,6 +13,32 @@ enum StoreItems {
   COIN_DOUBLER = 'coin_doubler',
 }
 
+
+// get user items
+router.get("/get-items", async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Fetching items from the "items" collection
+    const items = await pb.collection("items").getFullList({
+      sort: '-cost'  // Sorting items by creation date, latest first
+    });
+
+    if (!items || items.length === 0) {
+      res.status(404).json({ error: "No items found" });
+      return;
+    }
+
+    // Return the items in the response
+    res.status(200).json(items);
+  } catch (error) {
+    // Log the error for debugging
+    console.error("Error fetching items:", error);
+
+    // Provide a more descriptive error message
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    res.status(500).json({ error: `Couldn't fetch the items: ${errorMessage}` });
+  }
+});
+
 // Purchase route
 router.post('/purchase', async (req: Request, res: Response): Promise<void> => {
   const { userId, itemName } = req.body;
@@ -161,6 +187,57 @@ router.post('/use-item', async (req: Request, res: Response): Promise<void> => {
       error: 'An error occurred while processing the request.',
       details: error instanceof Error ? error.message : String(error)
     });
+  }
+});
+
+
+router.post("/get-items-with-user-info", async (req: Request, res: Response): Promise<void> => {
+  const { userId, coins } = req.body;
+
+  if (!userId || coins === undefined) {
+    res.status(400).json({ error: "Missing required fields: userId and coins." });
+    return;
+  }
+
+  try {
+    // Fetch all items from the "items" collection
+    const items = await pb.collection("items").getFullList({
+      sort: '-cost'  // Sorting items by cost, highest first
+    });
+
+    if (!items || items.length === 0) {
+      res.status(404).json({ error: "No items found" });
+      return;
+    }
+
+    // Fetch user items to check what the user already owns
+    const userItems = await pb.collection('user_items').getFullList({
+      filter: `user="${userId}"`,
+      expand: 'item'
+    });
+
+    const userItemsMap = userItems.reduce((map, userItem) => {
+      map[userItem.item] = userItem.count; // Store the count of the items user owns
+      return map;
+    }, {} as Record<string, number>);
+
+    // Prepare the response with item details
+    const response = items.map(item => {
+      const ownedCount = userItemsMap[item.id] || 0;
+      const canBuy = coins >= item.cost;
+
+      return {
+        ...item,
+        count: ownedCount, // Show 1 if user owns the item, 0 otherwise
+        canBuy, // Set canBuy based on the user's coins
+      };
+    });
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Error fetching items with user info:", error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    res.status(500).json({ error: `Couldn't fetch the items: ${errorMessage}` });
   }
 });
 

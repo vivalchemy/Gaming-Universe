@@ -1,9 +1,214 @@
-import React from 'react'
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, Coins, Shield, Magnet, Rocket, Target, ZapOff, Zap, ChevronLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const Store = () => {
+// Item Card Component
+const ItemCard = ({ item, onBuy, onUse }) => {
+  const getItemIcon = (name) => {
+    switch (name) {
+      case 'coin_doubler':
+        return <Coins className="w-8 h-8" />;
+      case 'shield':
+        return <Shield className="w-8 h-8" />;
+      case 'magnet':
+        return <Magnet className="w-8 h-8" />;
+      case 'booster':
+        return <Rocket className="w-8 h-8" />;
+      case 'ammo':
+        return <Target className="w-8 h-8" />;
+      default:
+        return <Coins className="w-8 h-8" />;
+    }
+  };
+
+  const getItemName = (name) => {
+    return name.split('_').map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
+
   return (
-    <div>Store</div>
-  )
-}
+    <div className="bg-gray-800/60 backdrop-blur-sm rounded-xl border border-blue-500/20 p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/10">
+      <div className="flex flex-col items-center space-y-4">
+        <div className="w-16 h-16 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400">
+          {getItemIcon(item.name)}
+        </div>
 
-export default Store
+        <h3 className="text-xl font-bold text-white">{getItemName(item.name)}</h3>
+
+        <div className="flex items-center gap-2 text-yellow-400">
+          <Coins className="w-4 h-4" />
+          <span>{item.cost}</span>
+        </div>
+
+        <div className="bg-blue-900/30 px-3 py-1 rounded-full text-blue-300">
+          Count: {item.count}
+        </div>
+
+        <div className="flex gap-3 w-full">
+          <button
+            onClick={() => onBuy(item)}
+            disabled={!item.canBuy}
+            className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ${item.canBuy
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+              }`}
+          >
+            {item.canBuy ? <Zap className="w-4 h-4" /> : <ZapOff className="w-4 h-4" />}
+            Buy
+          </button>
+
+          <button
+            onClick={() => onUse(item)}
+            disabled={item.count === 0}
+            className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ${item.count > 0
+              ? 'bg-purple-600 hover:bg-purple-700 text-white'
+              : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+              }`}
+          >
+            <Rocket className="w-4 h-4" />
+            Use
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Search Bar Component
+const SearchBar = ({ value, onChange }) => (
+  <div className="relative">
+    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-5 h-5" />
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder="Search items..."
+      className="w-full md:w-96 pl-10 pr-4 py-2 bg-gray-800/50 border border-blue-500/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all duration-200"
+    />
+  </div>
+);
+
+// Main Store Component
+const SpaceStore = () => {
+  const router = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/store/get-items-with-user-info');
+        if (!response.ok) {
+          throw new Error('Failed to fetch items');
+        }
+        const data = await response.json();
+        setItems(data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch items:', err);
+        setError('Failed to fetch items');
+        setLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, []);
+
+  const filteredItems = useMemo(() => {
+    return items.filter(item =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [items, searchQuery]);
+
+  const handleBuy = (item) => {
+    console.log('Buying item:', item.name);
+    // Add your buy logic here
+  };
+
+  const handleUse = (item) => {
+    console.log('Using item:', item.name);
+    // Add your use logic here
+  };
+
+  const getRandomStars = () => {
+    return Array.from({ length: 50 }).map((_, i) => ({
+      id: i,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      animationDelay: `${Math.random() * 3}s`,
+      size: Math.random() * 2 + 1,
+    }));
+  };
+
+  const stars = getRandomStars();
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950 via-gray-900 to-black text-white">
+      {stars.map((star) => (
+        <div
+          key={star.id}
+          className="absolute rounded-full bg-white animate-twinkle"
+          style={{
+            top: star.top,
+            left: star.left,
+            width: `${star.size}px`,
+            height: `${star.size}px`,
+            animationDelay: star.animationDelay,
+            opacity: 0.6,
+          }}
+        />
+      ))}
+
+      <div className="container mx-auto p-4 md:p-8 relative z-10">
+        <button
+          onClick={() => { navigate('/') }}
+          className="flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors mb-6"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          <span>Back to Mission Control</span>
+        </button>
+
+        <div className="space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Space Station Store
+            </h1>
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <p className="text-xl">Loading items...</p>
+            </div>
+          ) : error ? (
+            <div className="flex justify-center items-center py-20 text-red-400">
+              <p className="text-xl">{error}</p>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+              <Search className="w-12 h-12 mb-4" />
+              <p className="text-xl">No items found matching your search</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredItems.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  onBuy={handleBuy}
+                  onUse={handleUse}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SpaceStore;
+

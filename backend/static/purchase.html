@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Store Dashboard</title>
-  <style>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Store Dashboard</title>
+    <style>
     :root {
       --primary-color: #4CAF50;
       --primary-hover: #45a049;
@@ -150,64 +150,82 @@
       color: #666;
       margin-top: 10px;
     }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Game Store Dashboard</h1>
-    
-    <div class="dashboard">
-      <!-- Purchase Card -->
-      <div class="card">
-        <h2 class="card-header">Purchase Item</h2>
-        <form id="purchaseForm">
-          <div class="form-group">
-            <label for="purchaseUserId">User ID</label>
-            <input type="text" id="purchaseUserId" name="userId" placeholder="Enter your User ID" required>
-          </div>
-          <div class="form-group">
-            <label for="purchaseItemName">Select Item</label>
-            <select id="purchaseItemName" name="itemName" required>
-              <option value="" disabled selected>Select an item</option>
-              <option value="booster">Booster</option>
-              <option value="magnet">Magnet</option>
-              <option value="shield">Shield</option>
-              <option value="ammo">Ammo</option>
-              <option value="coin_doubler">Coin Doubler</option>
-            </select>
-          </div>
-          <button type="submit" class="btn-purchase">Purchase Item</button>
-        </form>
-        <div class="result" id="purchaseResult"></div>
-      </div>
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Game Store Dashboard</h1>
 
-      <!-- Use Item Card -->
-      <div class="card">
-        <h2 class="card-header">Use Item</h2>
-        <form id="useItemForm">
-          <div class="form-group">
-            <label for="useUserId">User ID</label>
-            <input type="text" id="useUserId" name="userId" placeholder="Enter your User ID" required>
-          </div>
-          <div class="form-group">
-            <label for="useItemName">Select Item</label>
-            <select id="useItemName" name="itemName" required>
-              <option value="" disabled selected>Select an item</option>
-              <option value="booster">Booster</option>
-              <option value="magnet">Magnet</option>
-              <option value="shield">Shield</option>
-              <option value="ammo">Ammo</option>
-              <option value="coin_doubler">Coin Doubler</option>
-            </select>
-          </div>
-          <button type="submit" class="btn-use">Use Item</button>
-        </form>
-        <div class="result" id="useResult"></div>
+      <div class="dashboard">
+        <!-- Purchase Card -->
+        <div class="card">
+          <h2 class="card-header">Purchase Item</h2>
+          <form id="purchaseForm">
+            <div class="form-group">
+              <label for="purchaseUserId">User ID</label>
+              <input type="text" id="purchaseUserId" name="userId" placeholder="Enter your User ID" required>
+            </div>
+            <div class="form-group">
+              <label for="purchaseItemName">Select Item</label>
+              <select id="purchaseItemName" name="itemName" required>
+                <option value="" disabled selected>Select an item</option>
+                <option value="booster">Booster</option>
+                <option value="magnet">Magnet</option>
+                <option value="shield">Shield</option>
+                <option value="ammo">Ammo</option>
+                <option value="coin_doubler">Coin Doubler</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-purchase">Purchase Item</button>
+          </form>
+          <div class="result" id="purchaseResult"></div>
+        </div>
+
+        <!-- Use Item Card -->
+        <div class="card">
+          <h2 class="card-header">Use Item</h2>
+          <form id="useItemForm">
+            <div class="form-group">
+              <label for="useUserId">User ID</label>
+              <input type="text" id="useUserId" name="userId" placeholder="Enter your User ID" required>
+            </div>
+            <div class="form-group">
+              <label for="useItemName">Select Item</label>
+              <select id="useItemName" name="itemName" required>
+                <option value="" disabled selected>Select an item</option>
+                <option value="booster">Booster</option>
+                <option value="magnet">Magnet</option>
+                <option value="shield">Shield</option>
+                <option value="ammo">Ammo</option>
+                <option value="coin_doubler">Coin Doubler</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-use">Use Item</button>
+          </form>
+          <div class="result" id="useResult"></div>
+        </div>
+
+        <!-- Get Items with User Info Card -->
+        <div class="card">
+          <h2 class="card-header">Get Items with User Info</h2>
+          <form id="getItemsForm">
+            <div class="form-group">
+              <label for="getItemsUserId">User ID</label>
+              <input type="text" id="getItemsUserId" name="userId" placeholder="Enter your User ID" required>
+            </div>
+            <div class="form-group">
+              <label for="userCoins">User Coins</label>
+              <input type="number" id="userCoins" name="coins" placeholder="Enter your current coins" required>
+            </div>
+            <button type="submit" class="btn-purchase">Get Items</button>
+          </form>
+          <div class="result" id="getItemsResult"></div>
+        </div>
+
       </div>
     </div>
-  </div>
 
-  <script>
+    <script>
     function showResult(elementId, response, result) {
       const resultElement = document.getElementById(elementId);
       resultElement.innerHTML = response.ok ? 
@@ -221,7 +239,7 @@
       event.preventDefault();
       const userId = document.getElementById('purchaseUserId').value;
       const itemName = document.getElementById('purchaseItemName').value;
-      
+
       try {
         const response = await fetch('/store/purchase', {
           method: 'POST',
@@ -243,7 +261,7 @@
       event.preventDefault();
       const userId = document.getElementById('useUserId').value;
       const itemName = document.getElementById('useItemName').value;
-      
+
       try {
         const response = await fetch('/store/use-item', {
           method: 'POST',
@@ -259,6 +277,42 @@
         showResult('useResult', { ok: false }, { error: 'Error using item.' });
       }
     });
-  </script>
-</body>
+
+    // Get Items Form Handler
+    document.getElementById('getItemsForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const userId = document.getElementById('getItemsUserId').value;
+      const coins = document.getElementById('userCoins').value;
+
+      try {
+        const response = await fetch('http://localhost:3000/store/get-items-with-user-info', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId, coins }),
+        });
+        const result = await response.json();
+
+        const resultElement = document.getElementById('getItemsResult');
+        if (response.ok) {
+          console.log(result);
+          resultElement.innerHTML = result.map(item => `
+<p>
+Item: ${item.name}, Cost: ${item.cost}, Owned: ${item.count}, Can Buy: ${item.canBuy}
+</p>
+`).join('');
+        } else {
+          resultElement.innerHTML = `<p>${result.error}</p>`;
+        }
+        resultElement.className = `result visible ${response.ok ? 'success' : 'error'}`;
+      } catch (error) {
+        console.error('Error fetching items:', error);
+        const resultElement = document.getElementById('getItemsResult');
+        resultElement.innerHTML = '<p>Error fetching items.</p>';
+        resultElement.className = 'result visible error';
+      }
+    });
+    </script>
+  </body>
 </html>
