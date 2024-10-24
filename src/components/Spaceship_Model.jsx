@@ -1,52 +1,78 @@
-import { useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, Preload, useGLTF } from "@react-three/drei";
+import CanvasLoader from "../3d/Loader";
 
-import * as THREE from 'three';
-// import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
-// import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
-// import { VOXLoader } from 'three/examples/jsm/loaders/VOXLoader';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-import SceneInit from '../lib/SceneInit';
+const Computers = ({ isMobile }) => {
+  const computer = useGLTF("./xian_spaceship/scene.gltf");
 
-function Spaceship_Model() {
+  return (
+    <mesh>
+      <hemisphereLight intensity={0.15} groundColor='black' />
+      <spotLight
+        position={[-20, 50, 10]}
+        angle={0.12}
+        penumbra={1}
+        intensity={1}
+        castShadow
+        shadow-mapSize={1024}
+      />
+      <pointLight intensity={1} />
+      <primitive
+        object={computer.scene}
+        scale={isMobile ? 0.55 : 0.6}
+        position={isMobile ? [0, -4, -2.2] : [0, -4.25, -1.5]}
+        rotation={[-0.01, -0.2, -0.1]}
+      />
+    </mesh>
+  );
+};
+
+const Spaceship_Model = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
-    const test = new SceneInit('myThreeJsCanvas');
-    test.initialize();
-    test.animate();
+    // Add a listener for changes to the screen size
+    const mediaQuery = window.matchMedia("(max-width: 500px)");
 
-    // const boxGeometry = new THREE.BoxGeometry(8, 8, 8);
-    // const boxMaterial = new THREE.MeshNormalMaterial();
-    // const boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
-    // test.scene.add(boxMesh);
+    // Set the initial value of the `isMobile` state variable
+    setIsMobile(mediaQuery.matches);
 
-    let loadedModel;
-    const glftLoader = new GLTFLoader();
-    glftLoader.load('./assets/shiba/scene.gltf', (gltfScene) => {
-      loadedModel = gltfScene;
-      // console.log(loadedModel);
-
-      gltfScene.scene.rotation.y = Math.PI / 8;
-      gltfScene.scene.position.y = 3;
-      gltfScene.scene.scale.set(10, 10, 10);
-      test.scene.add(gltfScene.scene);
-    });
-
-    const animate = () => {
-      if (loadedModel) {
-        loadedModel.scene.rotation.x += 0.01;
-        loadedModel.scene.rotation.y += 0.01;
-        loadedModel.scene.rotation.z += 0.01;
-      }
-      requestAnimationFrame(animate);
+    // Define a callback function to handle changes to the media query
+    const handleMediaQueryChange = (event) => {
+      setIsMobile(event.matches);
     };
-    animate();
+
+    // Add the callback function as a listener for changes to the media query
+    mediaQuery.addEventListener("change", handleMediaQueryChange);
+
+    // Remove the listener when the component is unmounted
+    return () => {
+      mediaQuery.removeEventListener("change", handleMediaQueryChange);
+    };
   }, []);
 
   return (
-    <div>
-      <canvas id="myThreeJsCanvas" />
-    </div>
+    <Canvas
+      frameloop='demand'
+      shadows
+      dpr={[1, 2]}
+      camera={{ position: [20, 3, 5], fov: 25 }}
+      gl={{ preserveDrawingBuffer: true }}
+    >
+      <Suspense fallback={<CanvasLoader />}>
+        <OrbitControls
+          enableZoom={false}
+          maxPolarAngle={Math.PI / 2}
+          minPolarAngle={Math.PI / 2}
+        />
+        <Computers isMobile={isMobile} />
+      </Suspense>
+
+      <Preload all />
+    </Canvas>
   );
-}
+};
 
 export default Spaceship_Model;
