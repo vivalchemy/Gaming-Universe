@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Leaderboard</title>
+  <style>
+    :root {
+      --primary-color: #4f46e5;
+      --primary-hover: #4338ca;
+      --background: #f3f4f6;
+      --card-bg: white;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --success-color: #10b981;
+      --warning-color: #f59e0b;
+      --medal-gold: #fbbf24;
+      --medal-silver: #9ca3af;
+      --medal-bronze: #d97706;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--background);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    select, button {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      background-color: white;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .leaderboard {
+      background-color: var(--card-bg);
+      border-radius: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .leaderboard-table th {
+      background-color: #f9fafb;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .rank {
+      font-weight: 600;
+      width: 70px;
+    }
+
+    .rank-1, .rank-2, .rank-3 {
+      font-size: 1.25rem;
+    }
+
+    .rank-1 { color: var(--medal-gold); }
+    .rank-2 { color: var(--medal-silver); }
+    .rank-3 { color: var(--medal-bronze); }
+
+    .player {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 2rem;
+    }
+
+    .pagination button {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+    }
+
+    .pagination button:disabled {
+      background-color: var(--text-secondary);
+      cursor: not-allowed;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+
+    .error {
+      background-color: #fee2e2;
+      color: #dc2626;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      .leaderboard-table th:nth-child(4),
+      .leaderboard-table td:nth-child(4) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="title">Game Leaderboard</h1>
+    </header>
+
+    <div class="controls">
+      <select id="timeFrame">
+        <option value="all">All Time</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="monthly">Monthly</option>
+      </select>
+      <select id="perPage">
+        <option value="10">10 per page</option>
+        <option value="30" selected>30 per page</option>
+        <option value="50">50 per page</option>
+        <option value="100">100 per page</option>
+      </select>
+      <button id="refresh">Refresh</button>
+    </div>
+
+    <div id="error" class="error" style="display: none;"></div>
+
+    <div class="leaderboard">
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Player</th>
+            <th>Level</th>
+            <th>Progress</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+          <tr>
+            <td colspan="5" class="loading">Loading leaderboard data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <button id="prevPage" disabled>Previous</button>
+      <button id="nextPage" disabled>Next</button>
+    </div>
+  </div>
+
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
+
+    async function fetchLeaderboard() {
+      const timeFrame = document.getElementById('timeFrame').value;
+      const perPage = document.getElementById('perPage').value;
+      
+      try {
+        document.getElementById('leaderboardBody').innerHTML = '<tr><td colspan="5" class="loading">Loading leaderboard data...</td></tr>';
+        document.getElementById('error').style.display = 'none';
+        
+        const response = await fetch(`/leaderboard?page=${currentPage}&perPage=${perPage}&timeFrame=${timeFrame}`);
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.error || 'Failed to fetch leaderboard');
+        
+        updateLeaderboard(data);
+        updatePagination(data);
+      } catch (error) {
+        document.getElementById('error').textContent = error.message;
+        document.getElementById('error').style.display = 'block';
+      }
+    }
+
+    function updateLeaderboard(data) {
+      const tbody = document.getElementById('leaderboardBody');
+      tbody.innerHTML = data.items.map(item => `
+        <tr>
+          <td class="rank rank-${item.rank}">${item.rank}</td>
+          <td>
+            <div class="player">
+              <div class="avatar">
+                ${item.expand?.user?.username?.charAt(0)?.toUpperCase() || '?'}
+              </div>
+              <span>${item.expand?.user?.username || 'Anonymous'}</span>
+            </div>
+          </td>
+          <td>${item.level}</td>
+          <td>${item.progress.toFixed(1)}%</td>
+          <td>${item.timeFormatted}</td>
+        </tr>
+      `).join('');
+    }
+
+    function updatePagination(data) {
+      totalPages = data.totalPages;
+      document.getElementById('prevPage').disabled = currentPage <= 1;
+      document.getElementById('nextPage').disabled = currentPage >= totalPages;
+    }
+
+    // Event Listeners
+    document.getElementById('refresh').addEventListener('click', fetchLeaderboard);
+    document.getElementById('timeFrame').addEventListener('change', () => {
+      currentPage = 1;
+      fetchLeaderboard();
+    });
+    document.getElementById('perPage').addEventListener('change', () => {
+      currentPage = 1;
+      fetchLeaderboard();
+    });
+    document.getElementById('prevPage').addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        fetchLeaderboard();
+      }
+    });
+    document.getElementById('nextPage').addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        fetchLeaderboard();
+      }
+    });
+
+    // Initial load
+    fetchLeaderboard();
+  </script>
+</body>
+</html>

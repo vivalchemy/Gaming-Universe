@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runs API Tester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .card {
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .form-input {
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .form-input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.3s ease, height 0.3s ease;
+    }
+
+    .btn:hover::after {
+      width: 200px;
+      height: 200px;
+    }
+
+    .response-container {
+      transition: all 0.3s ease;
+    }
+
+    @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+    }
+
+    .loading {
+      animation: shimmer 2s infinite linear;
+      background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
+      background-size: 1000px 100%;
+    }
+    </style>
+  </head>
+  <body class="min-h-screen gradient-bg text-gray-800 py-12 px-4">
+    <div class="max-w-5xl mx-auto space-y-8">
+      <!-- Header -->
+      <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-white mb-4">Runs API Tester</h1>
+        <p class="text-gray-200 text-lg">Test your API endpoints with style</p>
+      </div>
+      <!-- Response Section -->
+      <div class="card glass-effect p-8 rounded-2xl mt-8">
+        <h2 class="text-xl font-semibold mb-6 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Response
+        </h2>
+        <div class="relative">
+          <pre id="response" class="bg-gray-900 text-gray-100 p-6 rounded-lg overflow-auto max-h-96 font-mono text-sm"></pre>
+          <div id="copy-button" class="absolute top-4 right-4">
+            <button class="bg-gray-800 text-gray-300 px-3 py-1 rounded-md text-sm hover:bg-gray-700 transition-colors">
+              Copy
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <!-- Create Run -->
+        <div class="card glass-effect p-8 rounded-2xl">
+          <h2 class="text-xl font-semibold mb-6 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            Create Run
+          </h2>
+          <form id="createRunForm" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+              <input type="text" id="createUserId" class="form-input w-full p-3 rounded-lg bg-white" placeholder="Enter user ID">
+            </div>
+            <button type="submit" class="btn w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700">
+              Create New Run
+            </button>
+          </form>
+        </div>
+
+        <!-- Update Level -->
+        <div class="card glass-effect p-8 rounded-2xl">
+          <h2 class="text-xl font-semibold mb-6 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+            Update Level
+          </h2>
+          <form id="updateLevelForm" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Run ID</label>
+              <input type="text" id="levelRunId" class="form-input w-full p-3 rounded-lg bg-white" placeholder="Enter run ID">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+              <input type="text" id="levelUserId" class="form-input w-full p-3 rounded-lg bg-white" placeholder="Enter user ID">
+            </div>
+            <button type="submit" class="btn w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700">
+              Update Level
+            </button>
+          </form>
+        </div>
+
+        <!-- Update Progress -->
+        <div class="card glass-effect p-8 rounded-2xl">
+          <h2 class="text-xl font-semibold mb-6 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            Update Progress
+          </h2>
+          <form id="updateProgressForm" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Run ID</label>
+              <input type="text" id="progressRunId" class="form-input w-full p-3 rounded-lg bg-white" placeholder="Enter run ID">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+              <input type="text" id="progressUserId" class="form-input w-full p-3 rounded-lg bg-white" placeholder="Enter user ID">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Increment</label>
+              <input type="number" id="progressIncrement" class="form-input w-full p-3 rounded-lg bg-white" placeholder="Enter increment value">
+            </div>
+            <button type="submit" class="btn w-full bg-yellow-600 text-white py-3 rounded-lg font-medium hover:bg-yellow-700">
+              Update Progress
+            </button>
+          </form>
+        </div>
+
+        <!-- Get Runs -->
+        <div class="card glass-effect p-8 rounded-2xl">
+          <h2 class="text-xl font-semibold mb-6 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+            </svg>
+            Get All Runs
+          </h2>
+          <form id="getRunsForm" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+              <input type="text" id="getRunsUserId" class="form-input w-full p-3 rounded-lg bg-white" placeholder="Enter user ID">
+            </div>
+            <button type="submit" class="btn w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700">
+              Fetch All Runs
+            </button>
+          </form>
+        </div>
+      </div>
+      <!-- Get Specific Run -->
+      <div class="card glass-effect p-8 rounded-2xl">
+        <h2 class="text-xl font-semibold mb-6 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"/>
+          </svg>
+          Get Specific Run
+        </h2>
+        <form id="getSpecificRunForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Run ID</label>
+            <input type="text" id="specificRunId" class="form-input w-full p-3 rounded-lg bg-white" placeholder="Enter run ID">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+            <input type="text" id="specificUserId" class="form-input w-full p-3 rounded-lg bg-white" placeholder="Enter user ID">
+          </div>
+          <button type="submit" class="btn w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700">
+            Get Run Details
+          </button>
+        </form>
+      </div>
+
+      <!-- Get Latest Run -->
+      <div class="card glass-effect p-8 rounded-2xl">
+        <h2 class="text-xl font-semibold mb-6 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Get Latest Run
+        </h2>
+        <form id="getLatestRunForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+            <input type="text" id="latestUserId" class="form-input w-full p-3 rounded-lg bg-white" placeholder="Enter user ID">
+          </div>
+          <button type="submit" class="btn w-full bg-pink-600 text-white py-3 rounded-lg font-medium hover:bg-pink-700">
+            Get Latest Run
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <script>
+    const API_BASE_URL = 'http://localhost:3000/run';
+    const responseEl = document.getElementById('response');
+    const copyButton = document.getElementById('copy-button').querySelector('button');
+
+    function showLoading() {
+      responseEl.classList.add('loading');
+    }
+
+    function hideLoading() {
+      responseEl.classList.remove('loading');
+    }
+
+    function displayResponse(data) {
+      hideLoading();
+      const formattedJson = JSON.stringify(data, null, 2);
+      responseEl.textContent = formattedJson;
+      responseEl.classList.add('animate__animated', 'animate__fadeIn');
+    }
+
+    copyButton.addEventListener('click', () => {
+      const text = responseEl.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        copyButton.textContent = 'Copied!';
+        setTimeout(() => {
+          copyButton.textContent = 'Copy';
+        }, 2000);
+      });
+    });
+
+    async function handleRequest(url, method, data = null) {
+      console.log(url);
+      showLoading();
+      try {
+        const options = {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
+
+        if (data) {
+          options.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(url, options);
+        const responseData = await response.json();
+        displayResponse(responseData);
+      } catch (error) {
+        displayResponse({ error: error.message });
+      }
+    }
+
+    // Create Run
+    document.getElementById('createRunForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('createUserId').value;
+      await handleRequest(`${API_BASE_URL}/create`, 'POST', { id });
+    });
+
+    // Update Level
+    document.getElementById('updateLevelForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const runId = document.getElementById('levelRunId').value;
+      const userId = document.getElementById('levelUserId').value;
+      await handleRequest(`${API_BASE_URL}/level`, 'PATCH', { runId, userId });
+    });
+
+    // Update Progress
+    document.getElementById('updateProgressForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('progressRunId').value;
+      const userId = document.getElementById('progressUserId').value;
+      const increment = parseInt(document.getElementById('progressIncrement').value);
+      await handleRequest(`${API_BASE_URL}/progress`, 'PATCH', { id, userId, increment });
+    });
+
+    // Get Runs
+    document.getElementById('getRunsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userId = document.getElementById('getRunsUserId').value;
+      await handleRequest(`${API_BASE_URL}/user/${userId}`, 'GET');
+    });
+
+    // Get Specific Run
+    document.getElementById('getSpecificRunForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const runId = document.getElementById('specificRunId').value;
+      const userId = document.getElementById('specificUserId').value;
+      await handleRequest(`${API_BASE_URL}/${runId}/${userId}`, 'GET');
+    });
+
+    // Get Latest Run
+    document.getElementById('getLatestRunForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userId = document.getElementById('latestUserId').value;
+      console.log(userId, API_BASE_URL)
+      await handleRequest(`${API_BASE_URL}/latest/${userId}`, 'GET');
+    });
+
+    // Add form animations
+    document.querySelectorAll('form').forEach(form => {
+      form.addEventListener('submit', function() {
+        this.closest('.card').classList.add('animate__animated', 'animate__pulse');
+        setTimeout(() => {
+          this.closest('.card').classList.remove('animate__animated', 'animate__pulse');
+        }, 1000);
+      });
+    });
+
+    // Add input animations
+    document.querySelectorAll('.form-input').forEach(input => {
+      input.addEventListener('focus', function() {
+        this.closest('div').classList.add('animate__animated', 'animate__pulse');
+      });
+      input.addEventListener('blur', function() {
+        this.closest('div').classList.remove('animate__animated', 'animate__pulse');
+      });
+    });
+    </script>
+  </body>
+</html>

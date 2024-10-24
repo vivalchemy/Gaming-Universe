@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Store Dashboard</title>
+  <style>
+    :root {
+      --primary-color: #4CAF50;
+      --primary-hover: #45a049;
+      --secondary-color: #3498db;
+      --secondary-hover: #2980b9;
+      --danger-color: #e74c3c;
+      --danger-hover: #c0392b;
+      --background: #f6f8fa;
+      --card-bg: white;
+      --text-color: #2c3e50;
+      --border-radius: 10px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--text-color);
+      margin-bottom: 30px;
+      font-size: 2.5em;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 25px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+      color: var(--text-color);
+      border-bottom: 2px solid var(--background);
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--background);
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-purchase {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .btn-purchase:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-use {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    .btn-use:hover {
+      background-color: var(--secondary-hover);
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: var(--border-radius);
+      text-align: center;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .result.visible {
+      opacity: 1;
+    }
+
+    .result.success {
+      background-color: rgba(76, 175, 80, 0.1);
+      color: var(--primary-color);
+    }
+
+    .result.error {
+      background-color: rgba(231, 76, 60, 0.1);
+      color: var(--danger-color);
+    }
+
+    .item-count {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Game Store Dashboard</h1>
+    
+    <div class="dashboard">
+      <!-- Purchase Card -->
+      <div class="card">
+        <h2 class="card-header">Purchase Item</h2>
+        <form id="purchaseForm">
+          <div class="form-group">
+            <label for="purchaseUserId">User ID</label>
+            <input type="text" id="purchaseUserId" name="userId" placeholder="Enter your User ID" required>
+          </div>
+          <div class="form-group">
+            <label for="purchaseItemName">Select Item</label>
+            <select id="purchaseItemName" name="itemName" required>
+              <option value="" disabled selected>Select an item</option>
+              <option value="booster">Booster</option>
+              <option value="magnet">Magnet</option>
+              <option value="shield">Shield</option>
+              <option value="ammo">Ammo</option>
+              <option value="coin_doubler">Coin Doubler</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-purchase">Purchase Item</button>
+        </form>
+        <div class="result" id="purchaseResult"></div>
+      </div>
+
+      <!-- Use Item Card -->
+      <div class="card">
+        <h2 class="card-header">Use Item</h2>
+        <form id="useItemForm">
+          <div class="form-group">
+            <label for="useUserId">User ID</label>
+            <input type="text" id="useUserId" name="userId" placeholder="Enter your User ID" required>
+          </div>
+          <div class="form-group">
+            <label for="useItemName">Select Item</label>
+            <select id="useItemName" name="itemName" required>
+              <option value="" disabled selected>Select an item</option>
+              <option value="booster">Booster</option>
+              <option value="magnet">Magnet</option>
+              <option value="shield">Shield</option>
+              <option value="ammo">Ammo</option>
+              <option value="coin_doubler">Coin Doubler</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-use">Use Item</button>
+        </form>
+        <div class="result" id="useResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showResult(elementId, response, result) {
+      const resultElement = document.getElementById(elementId);
+      resultElement.innerHTML = response.ok ? 
+        `<p>${result.msg}</p>${result.remainingCount !== undefined ? `<div class="item-count">Remaining items: ${result.remainingCount}</div>` : ''}` : 
+        `<p>${result.error}</p>`;
+      resultElement.className = `result visible ${response.ok ? 'success' : 'error'}`;
+    }
+
+    // Purchase Form Handler
+    document.getElementById('purchaseForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const userId = document.getElementById('purchaseUserId').value;
+      const itemName = document.getElementById('purchaseItemName').value;
+      
+      try {
+        const response = await fetch('/store/purchase', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId, itemName }),
+        });
+        const result = await response.json();
+        showResult('purchaseResult', response, result);
+      } catch (error) {
+        console.error('Error during purchase:', error);
+        showResult('purchaseResult', { ok: false }, { error: 'Error processing purchase.' });
+      }
+    });
+
+    // Use Item Form Handler
+    document.getElementById('useItemForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const userId = document.getElementById('useUserId').value;
+      const itemName = document.getElementById('useItemName').value;
+      
+      try {
+        const response = await fetch('/store/use-item', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId, itemName }),
+        });
+        const result = await response.json();
+        showResult('useResult', response, result);
+      } catch (error) {
+        console.error('Error using item:', error);
+        showResult('useResult', { ok: false }, { error: 'Error using item.' });
+      }
+    });
+  </script>
+</body>
+</html>
