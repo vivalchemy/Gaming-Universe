@@ -190,7 +190,7 @@ export default function Leaderboard() {
                       </td>
                     </tr>
                   ) : (
-                    leaderboardData.map((item) => (
+                    leaderboardData.map((item, index) => (
                       <tr
                         key={item.rank}
                         className="hover:bg-blue-900/20 transition-colors duration-200 border-b border-blue-500/10"
@@ -198,7 +198,7 @@ export default function Leaderboard() {
                         <td className="p-4 font-bold text-white">
                           <div className="flex items-center gap-2">
                             {getRankIcon(item.rank)}
-                            <span className={item.rank <= 3 ? 'text-2xl' : ''}>{item.rank}</span>
+                            <span className={item.rank <= 3 ? 'text-2xl' : ''}>{index + 1}</span>
                           </div>
                         </td>
                         <td className="p-4">

@@ -1,22 +1,41 @@
-import Hero from "./components/Hero"
-import Spaceship_Model from "./components/Spaceship_Model"
-import Earth from "./components/Earth"
-import Mars from "./components/Mars"
-import Pluto from "./components/Pluto"
-import Jupiter from "./components/Jupiter"
-import Neptune from "./components/Neptune"
-import Uranus from "./components/Uranus"
-import Saturn from "./components/Saturn"
-import { createBrowserRouter, RouterProvider } from "react-router-dom"
-import Leaderboard from "./components/Leaderboard"
-import Store from "./components/Store"
-import Auth from "./components/Auth"
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Leaderboard from "./components/Leaderboard";
+import Store from "./components/Store";
+import Auth from "./components/Auth";
+import Levels from "./components/Levels";
+import Level1 from "./components/levels/Level1";
+import Level2 from "./components/levels/Level2";
+import Level3 from "./components/levels/Level3";
+import Level4 from "./components/levels/Level4";
+import Level5 from "./components/levels/Level5";
+import Level6 from "./components/levels/Level6";
+import Level7 from "./components/levels/Level7";
+import Level8 from "./components/levels/Level8";
+import { useAuthCheck } from './hooks/useAuthCheck';
+
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuthCheck();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl font-semibold">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Auth />;
+  }
+
+  return <>{children}</>;
+}
 
 const App = () => {
   const router = createBrowserRouter([
     {
       path: "/",
-      element: <Hero />
+      element: <ProtectedRoute><Levels /></ProtectedRoute>
     },
     {
       path: "/auth",
@@ -24,13 +43,45 @@ const App = () => {
     },
     {
       path: "/leaderboard",
-      element: <Leaderboard />
+      element: <ProtectedRoute><Leaderboard /></ProtectedRoute>
     },
     {
       path: "/store",
-      element: <Store />
+      element: <ProtectedRoute><Store /></ProtectedRoute>
+    },
+    {
+      path: "/level1",
+      element: <ProtectedRoute><Level1 /></ProtectedRoute>
+    },
+    {
+      path: "/level2",
+      element: <ProtectedRoute><Level2 /></ProtectedRoute>
+    },
+    {
+      path: "/level3",
+      element: <ProtectedRoute><Level3 /></ProtectedRoute>
+    },
+    {
+      path: "/level4",
+      element: <ProtectedRoute><Level4 /></ProtectedRoute>
+    },
+    {
+      path: "/level5",
+      element: <ProtectedRoute><Level5 /></ProtectedRoute>
+    },
+    {
+      path: "/level6",
+      element: <ProtectedRoute><Level6 /></ProtectedRoute>
+    },
+    {
+      path: "/level7",
+      element: <ProtectedRoute><Level7 /></ProtectedRoute>
+    },
+    {
+      path: "/level8",
+      element: <ProtectedRoute><Level8 /></ProtectedRoute>
     }
-  ])
+  ]);
 
   return (
     <>
@@ -41,4 +92,4 @@ const App = () => {
   )
 }
 
-export default App
+export default App;

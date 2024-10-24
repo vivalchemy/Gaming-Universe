@@ -48,7 +48,7 @@ const Auth = () => {
 
       // Redirect after successful login/signup
       if (isLogin) {
-        window.location.href = '/store'; // or wherever you want to redirect after login
+        window.location.href = '/'; // or wherever you want to redirect after login
       } else {
         setIsLogin(true); // Switch to login form after successful signup
       }

@@ -32,14 +32,11 @@ interface LeaderboardResponse {
 }
 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
-  console.log("step 1")
   try {
-    console.log("step 2")
     const pageNumber = Math.max(1, parseInt(req.query.page as string) || 1);
     const perPage = Math.min(100, parseInt(req.query.perPage as string) || 30);
     const timeFrame = (req.query.timeFrame as string) || 'all'; // all, daily, weekly, monthly
 
-    console.log("step 3")
     // Calculate date range based on timeFrame
     let dateFilter = '';
     const now = new Date();
@@ -59,7 +56,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       dateFilter = `created >= "${startDate.toISOString()}"`;
     }
 
-    console.log("step 4")
     // Fetch leaderboard data with user expansion
     const leaderboard = await pb.collection("runs").getList(pageNumber, perPage, {
       sort: "-level,-progress",
@@ -67,20 +63,17 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       expand: 'user'
     });
 
-    console.log("step 5")
     // Process and format items
     const rankedItems: LeaderboardItem[] = leaderboard.items.map((item: any, index: number) => {
       const startTime = new Date(item.started_at);
       const finishTime = item.finished_at ? new Date(item.finished_at) : new Date();
       const timeDifference = finishTime.getTime() - startTime.getTime();
 
-      console.log("step 6")
       // Format time difference
       const hours = Math.floor(timeDifference / (1000 * 60 * 60));
       const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
 
-      console.log("step 7")
       return {
         ...item,
         rank: ((pageNumber - 1) * perPage) + index + 1,
@@ -89,22 +82,18 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       } as LeaderboardItem;
     });
 
-    console.log("step 8")
     // Sort with refined logic
     rankedItems.sort((a, b) => {
       // Primary sort by level
       if (b.level !== a.level) return b.level - a.level;
 
-      console.log("step 9")
       // Secondary sort by progress
       if (b.progress !== a.progress) return b.progress - a.progress;
 
-      console.log("step 10")
       // Tertiary sort by time (faster times first)
       return (a.timeDifference || 0) - (b.timeDifference || 0);
     });
 
-    console.log("step 11")
     const response: LeaderboardResponse = {
       page: leaderboard.page,
       perPage: leaderboard.perPage,
