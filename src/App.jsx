@@ -1,5 +1,5 @@
-
 import Hero from "./components/Hero"
+import Spaceship_Model from "./components/Spaceship_Model"
 
 const App = () => {
   return (
