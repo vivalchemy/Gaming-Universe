@@ -12,9 +12,12 @@ import Level6 from "./components/levels/Level6";
 import Level7 from "./components/levels/Level7";
 import Level8 from "./components/levels/Level8";
 import { useAuthCheck } from './hooks/useAuthCheck';
+import { createContext } from "react";
+
+export const UserContext = createContext()
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuthCheck();
+  const { isAuthenticated, loading, userId } = useAuthCheck();
 
   if (loading) {
     return (
@@ -28,7 +31,7 @@ function ProtectedRoute({ children }) {
     return <Auth />;
   }
 
-  return <>{children}</>;
+  return <UserContext.Provider value={{ userId }}>{children}</UserContext.Provider>;
 }
 
 const App = () => {
