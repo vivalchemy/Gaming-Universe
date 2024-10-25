@@ -9,6 +9,7 @@ import Planet from '../Planet';
 import Asteroids from '../Asteroids';
 import Coin from '../Coin';
 import Spaceship from '../Spaceship';
+import { useNavigate } from 'react-router-dom';
 
 // Custom camera controller component
 const CameraController = ({ isZooming, onZoomComplete }) => {
@@ -54,6 +55,7 @@ const Level1 = () => {
   const [isZooming, setIsZooming] = useState(false);
   const asteroidRefs = useRef(Array.from({ length: 10 }, () => useRef()));
   const coinRefs = useRef(Array.from({ length: 50 }, () => useRef()));
+  const navigate = useNavigate();
   
   // Use refs for distance tracking to prevent re-renders
   const distanceRef = useRef(100);
@@ -83,7 +85,7 @@ const Level1 = () => {
           // Check for mission complete
           if (distanceRef.current <= 0) {
             setMissionComplete(true);
-            return;
+            navigate("/");
           }
         }
 
