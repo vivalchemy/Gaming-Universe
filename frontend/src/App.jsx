@@ -10,7 +10,6 @@ import Level4 from "./components/levels/Level4";
 import Level5 from "./components/levels/Level5";
 import Level6 from "./components/levels/Level6";
 import Level7 from "./components/levels/Level7";
-import Level8 from "./components/levels/Level8";
 import { useAuthCheck } from './hooks/useAuthCheck';
 import { createContext } from "react";
 
@@ -54,7 +53,7 @@ const App = () => {
     },
     {
       path: "/level1",
-      element: <Level1 />
+      element: <ProtectedRoute><Level1 /></ProtectedRoute>
     },
     {
       path: "/level2",
@@ -78,11 +77,7 @@ const App = () => {
     },
     {
       path: "/level7",
-      element: <Level7 />
-    },
-    {
-      path: "/level8",
-      element: <ProtectedRoute><Level8 /></ProtectedRoute>
+      element: <ProtectedRoute><Level7 /></ProtectedRoute>
     }
   ]);
 

@@ -1,5 +1,5 @@
 import { Suspense, useRef, useEffect, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import gsap from 'gsap';
 import PropTypes from 'prop-types';
@@ -9,6 +9,32 @@ import Planet from '../Planet';
 import Asteroids from '../Asteroids';
 import Coin from '../Coin';
 import Spaceship from '../Spaceship';
+
+// Custom camera controller component
+const CameraController = ({ isZooming, onZoomComplete }) => {
+  const { camera } = useThree();
+
+  useEffect(() => {
+    if (isZooming) {
+      // Start from a more distant and elevated position
+      camera.position.set(0, 15, 30);
+
+      // Create a smooth cinematic zoom
+      gsap.to(camera.position, {
+        x: 0,
+        y: 4.2, // Slight elevation for better game view
+        z: 6,
+        duration: 3,
+        ease: "power2.inOut",
+        onComplete: () => {
+          onZoomComplete();
+        }
+      });
+    }
+  }, [isZooming, camera, onZoomComplete]);
+
+  return null;
+};
 
 const CanvasLoader = () => {
   return (
@@ -20,18 +46,18 @@ const CanvasLoader = () => {
 };
 
 const Level1 = () => {
-  const cameraRef = useRef();
   const [missionStarted, setMissionStarted] = useState(false);
   const [showRules, setShowRules] = useState(true);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [missionComplete, setMissionComplete] = useState(false);
+  const [isZooming, setIsZooming] = useState(false);
   const asteroidRefs = useRef(Array.from({ length: 10 }, () => useRef()));
   const coinRefs = useRef(Array.from({ length: 50 }, () => useRef()));
   
   // Use refs for distance tracking to prevent re-renders
-  const distanceRef = useRef(1000);
-  const distanceDisplayRef = useRef(1000);
+  const distanceRef = useRef(100);
+  const distanceDisplayRef = useRef(100);
   const displayUpdateTimeoutRef = useRef(null);
   const distanceElementRef = useRef(null);
 
@@ -79,17 +105,12 @@ const Level1 = () => {
     };
   }, [missionStarted, gameOver, missionComplete]);
 
-  useEffect(() => {
-    if (cameraRef.current) {
-      gsap.fromTo(
-        cameraRef.current.position,
-        { x: 0, y: 0, z: 20 },
-        { x: 0, y: 0, z: 8, duration: 2, ease: "power2.inOut" }
-      );
-    }
-  }, []);
-
   const handleBeginMission = () => {
+    setIsZooming(true);
+  };
+
+  const handleZoomComplete = () => {
+    setIsZooming(false);
     setMissionStarted(true);
     setShowRules(false);
   };
@@ -107,10 +128,15 @@ const Level1 = () => {
       <Canvas
         shadows
         dpr={[1, 2]}
-        camera={{ position: [0, 0, 8], fov: 50 }}
+        camera={{ position: [0, 15, 30], fov: 60 }}
         gl={{ preserveDrawingBuffer: true }}
       >
         <Suspense fallback={<CanvasLoader />}>
+          <CameraController
+            isZooming={isZooming}
+            onZoomComplete={handleZoomComplete}
+          />
+          
           <ambientLight intensity={0.5} />
           <pointLight position={[5, 5, 5]} />
           <Stars />
@@ -122,7 +148,7 @@ const Level1 = () => {
           />
           <Asteroids asteroidRefs={asteroidRefs} />
           
-          {missionStarted && !gameOver && !missionComplete && (
+          {(missionStarted || isZooming) && !gameOver && !missionComplete && (
             <>
               <Spaceship
                 asteroidRefs={asteroidRefs}
@@ -164,7 +190,7 @@ const Level1 = () => {
         </div>
       )}
 
-      {!missionStarted && (
+      {!missionStarted && !isZooming && (
         <div className="intro-text absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col z-10 text-white">
           <h1 className="text-5xl font-bold mb-5">NASA Space Mission</h1>
           <button
