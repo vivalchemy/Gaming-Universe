@@ -56,6 +56,7 @@ const Level1 = () => {
   const asteroidRefs = useRef(Array.from({ length: 10 }, () => useRef()));
   const coinRefs = useRef(Array.from({ length: 50 }, () => useRef()));
   const navigate = useNavigate();
+  const audioRef = useRef(new Audio('/sounds/levels.mp3')); // Load the background music
   
   // Use refs for distance tracking to prevent re-renders
   const distanceRef = useRef(100);
@@ -106,6 +107,14 @@ const Level1 = () => {
       }
     };
   }, [missionStarted, gameOver, missionComplete]);
+
+  useEffect(() => {
+    if (missionStarted) {
+      audioRef.current.play();
+    } else {
+      audioRef.current.pause();
+    }
+  }, [missionStarted]);
 
   const handleBeginMission = () => {
     setIsZooming(true);
