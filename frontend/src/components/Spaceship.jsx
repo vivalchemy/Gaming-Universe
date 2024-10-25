@@ -1,53 +1,61 @@
-import React, { Suspense, useRef, useState, useEffect } from "react";
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { useRef, useState, useEffect, Suspense } from "react";
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, Preload, useGLTF } from "@react-three/drei";
 import gsap from 'gsap';
-import { useGLTF } from "@react-three/drei";
+import * as THREE from 'three';
+import CanvasLoader from "../3d/Loader";
 
-const Computers = ({ isMobile }) => {
-  const computer = useGLTF("/xian_spaceship/scene.gltf");
+const Computers = ({ isMobile, spaceshipRef }) => {
+    let computer;
+    try {
+        computer = useGLTF("/xian_spaceship/scene.gltf");
+    } catch (error) {
+        console.error("Failed to load spaceship model:", error);
+        return null;  // Return null to avoid rendering issues
+    }
 
-  return (
-    <mesh>
-      {/* Adjusting hemisphere light for softer ambient light */}
-      <hemisphereLight intensity={0.35} groundColor='black' />
+    return (
+        <mesh ref={spaceshipRef}>
+            {/* Adjusting hemisphere light for softer ambient light */}
+            <hemisphereLight intensity={0.35} groundColor='black' />
 
-      {/* Adding a directional light for more direct lighting */}
-      <directionalLight
-        intensity={1.0}
-        position={[5, 10, 5]}
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        castShadow
-      />
+            {/* Adding a directional light for more direct lighting */}
+            <directionalLight
+                intensity={1.0}
+                position={[5, 10, 5]}
+                shadow-mapSize-width={1024}
+                shadow-mapSize-height={1024}
+                castShadow
+            />
 
-      {/* Adding spot light for highlights */}
-      <spotLight
-        position={[-20, 50, 10]}
-        angle={0.3}
-        penumbra={1}
-        intensity={2}
-        castShadow
-        shadow-mapSize={1024}
-      />
+            {/* Adding spot light for highlights */}
+            <spotLight
+                position={[-20, 50, 10]}
+                angle={0.3}
+                penumbra={1}
+                intensity={2}
+                castShadow
+                shadow-mapSize={1024}
+            />
 
-      <pointLight intensity={1} />
+            <pointLight intensity={1} />
 
-      {/* Original GLTF primitive */}
-      <primitive
-        object={computer.scene}
-        scale={isMobile ? 0.55 : 0.6}
-        position={isMobile ? [0, -4, -2.2] : [-2, -1, 0]}
-        rotation={[-0.01, -0.2, -0.1]}
-      />
-    </mesh>
-  );
+            {/* Original GLTF primitive */}
+            <primitive
+                object={computer.scene}
+                scale={isMobile ? 0.55 : 0.6}
+                position={isMobile ? [0, -4, -2.2] : [-2, -1, 0]}
+                rotation={[-0.01, -0.2, -0.1]}
+            />
+        </mesh>
+    );
 };
 
 const Spaceship = ({ asteroidRefs, coinRefs, setGameOver, setScore }) => {
-  const spaceshipRef = useRef();
-  const velocity = useRef({ x: 0, y: 0 });
-  const [isBurning, setIsBurning] = useState(false);
+    const spaceshipRef = useRef();
+    const velocity = useRef({ x: 0, y: 0 });
+    const [isBurning, setIsBurning] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
   useFrame(() => {
     spaceshipRef.current.position.x += velocity.current.x;
@@ -120,31 +128,50 @@ const Spaceship = ({ asteroidRefs, coinRefs, setGameOver, setScore }) => {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, []);
 
-  return (
-    <group ref={spaceshipRef} position={[0, 0, 5]}>
-      {/* Render the Computers component */}
-      <Computers isMobile={false} /> {/* Pass appropriate props as needed */}
-      {isBurning && (
-        <group position={[0, -0.3, -0.5]}>
-          <mesh>
-            <coneGeometry args={[0.05, 0.2, 16]} />
-            <meshStandardMaterial color="#FFA500" />
-          </mesh>
-          <mesh position={[0, 0.1, 0]}>
-            <coneGeometry args={[0.05, 0.2, 16]} />
-            <meshStandardMaterial color="#FFA500" />
-          </mesh>
-        </group>
-      )}
-    </group>
-  );
+    useEffect(() => {
+        const mediaQuery = window.matchMedia("(max-width: 500px)");
+
+        setIsMobile(mediaQuery.matches);
+
+        const handleMediaQueryChange = (event) => {
+            setIsMobile(event.matches);
+        };
+
+        mediaQuery.addEventListener("change", handleMediaQueryChange);
+
+        return () => {
+            mediaQuery.removeEventListener("change", handleMediaQueryChange);
+        };
+    }, []);
+
+    return (
+        <div className="w-screen h-screen overflow-hidden">
+            <Canvas
+                frameloop='demand'
+                shadows
+                dpr={[1, 2]}
+                camera={{ position: [20, 3, 5], fov: 50 }}
+                gl={{ preserveDrawingBuffer: true }}
+            >
+                <Suspense fallback={<CanvasLoader />}>
+                    <OrbitControls
+                        enableZoom={false}
+                        maxPolarAngle={Math.PI / 2}
+                        minPolarAngle={Math.PI / 2}
+                    />
+                    <Computers isMobile={isMobile} spaceshipRef={spaceshipRef}/>
+                </Suspense>
+
+                <Preload all />
+            </Canvas>
+        </div>
+    );
 };
 
 export default Spaceship;
-
