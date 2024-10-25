@@ -62,7 +62,7 @@ const App = () => {
     },
     {
       path: "/level3",
-      element: <ProtectedRoute><Level3 /></ProtectedRoute>
+      element: <Level3 />
     },
     {
       path: "/level4",
