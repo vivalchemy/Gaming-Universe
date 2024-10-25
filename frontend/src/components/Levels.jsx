@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Star, Rocket, Trophy, Lock, Play, RefreshCw } from 'lucide-react';
+import { UserContext } from '../App';
 
 const levels = [
   { id: 1, from: "Pluto", to: "Neptune", distance: 1.43e9 },
@@ -39,48 +41,46 @@ const StarField = () => {
   );
 };
 
-export default function SpaceGame() {
+export default function Levels() {
+  const navigate = useNavigate();
+  const { userId } = useContext(UserContext);
   const [currentRun, setCurrentRun] = useState(null);
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboard] = useState([
+    { id: 1, user: "SpaceExplorer", level: 4 },
+    { id: 2, user: "StarSeeker", level: 3 },
+    { id: 3, user: "CosmicVoyager", level: 2 }
+  ]);
 
-  // Fetch initial game state
+  // Fetch user's current run on component mount
   useEffect(() => {
-    const initializeGame = async () => {
+    const fetchCurrentRun = async () => {
       try {
-        // Try to get latest run
         const response = await fetch('/api/run/latest');
-        if (!response.ok) {
-          throw new Error('Failed to fetch latest run');
-        }
-        const data = await response.json();
 
-        if (data && !data.error) {
-          setCurrentRun(data);
-        } else {
-          // Create new run if none exists
-          const newRunResponse = await fetch('/api/run/create', {
+        if (response.status === 404) {
+          // If no run exists, create a new one
+          const createResponse = await fetch('/api/run/create', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             }
           });
-          if (!newRunResponse.ok) {
+
+          if (!createResponse.ok) {
             throw new Error('Failed to create new run');
           }
-          const newRun = await newRunResponse.json();
-          setCurrentRun(newRun);
-        }
 
-        // Fetch leaderboard
-        const leaderboardResponse = await fetch('/api/leaderboard');
-        if (!leaderboardResponse.ok) {
-          throw new Error('Failed to fetch leaderboard');
+          const newRun = await createResponse.json();
+          setCurrentRun(newRun);
+        } else if (!response.ok) {
+          throw new Error('Failed to fetch current run');
+        } else {
+          const data = await response.json();
+          setCurrentRun(data);
         }
-        const leaderboardData = await leaderboardResponse.json();
-        setLeaderboard(leaderboardData);
 
         setLoading(false);
       } catch (err) {
@@ -89,67 +89,14 @@ export default function SpaceGame() {
       }
     };
 
-    initializeGame();
-  }, []);
-
-  const handleLevelProgress = async (levelId) => {
-    if (!currentRun) return;
-
-    try {
-      if (currentRun.level === levelId) {
-        // Simulate progress (in a real game, this would be based on actual gameplay)
-        const increment = Math.floor(Math.random() * 20) + 10; // Random progress between 10-30
-
-        const response = await fetch('/api/run/progress', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            runId: currentRun.id,
-            increment
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to update progress');
-        }
-
-        const updatedRun = await response.json();
-        setCurrentRun(updatedRun);
-
-        // If level completed, update leaderboard
-        if (updatedRun.level > currentRun.level) {
-          const leaderboardResponse = await fetch('/api/leaderboard');
-          if (!leaderboardResponse.ok) {
-            throw new Error('Failed to fetch updated leaderboard');
-          }
-          const leaderboardData = await leaderboardResponse.json();
-          setLeaderboard(leaderboardData);
-        }
-      }
-    } catch (err) {
-      setError(err.message);
+    if (userId) {
+      fetchCurrentRun();
     }
-  };
+  }, [userId]);
 
-  const startNewRun = async () => {
-    try {
-      const response = await fetch('/api/run/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create new run');
-      }
-
-      const newRun = await response.json();
-      setCurrentRun(newRun);
-    } catch (err) {
-      setError(err.message);
+  const handleLevelNavigation = (levelId) => {
+    if (levelId <= (currentRun?.level || 1)) {
+      navigate(`/level${levelId}`);
     }
   };
 
@@ -197,20 +144,7 @@ export default function SpaceGame() {
         </div>
 
         {showLeaderboard && (
-          <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-purple-500/20 mb-8">
-            <h2 className="text-2xl font-bold mb-4 text-purple-200">Cosmic Leaderboard</h2>
-            <ul className="space-y-3">
-              {leaderboard.map((player, index) => (
-                <li key={player.id} className="flex justify-between items-center py-3 px-4 bg-purple-900/30 rounded-lg border border-purple-500/20">
-                  <div className="flex items-center space-x-3">
-                    <div className="text-yellow-400 font-bold">{index + 1}</div>
-                    <span className="text-purple-200">{player.user}</span>
-                  </div>
-                  <span className="text-blue-400 font-bold">Level {player.level}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          navigate("/leaderboard")
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -235,21 +169,21 @@ export default function SpaceGame() {
                   <p className="text-lg font-semibold text-purple-200">
                     Distance: {(level.distance / 1e6).toFixed(2)} million km
                   </p>
-                  {currentRun && (
-                    <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${level.id === currentRun.level ? currentRun.progress : (level.id < currentRun.level ? 100 : 0)}%` }}
-                      />
-                    </div>
-                  )}
+                  <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
+                    <div
+                      className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${level.id === currentRun?.level ? currentRun?.progress : (level.id < (currentRun?.level || 1) ? 100 : 0)}%`
+                      }}
+                    />
+                  </div>
                   <button
                     className={`w-full py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-all duration-300 ${level.id <= (currentRun?.level || 1)
                       ? 'bg-blue-600/50 hover:bg-blue-600/70 text-white border border-blue-500/20'
                       : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
                       }`}
                     disabled={level.id > (currentRun?.level || 1)}
-                    onClick={() => handleLevelProgress(level.id)}
+                    onClick={() => handleLevelNavigation(level.id)}
                   >
                     {level.id <= (currentRun?.level || 1) ? (
                       <>
