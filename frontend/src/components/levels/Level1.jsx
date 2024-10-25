@@ -1,3 +1,4 @@
+// Level1.jsx
 import { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
@@ -8,6 +9,7 @@ import Pluto from '../Pluto';
 import Planet from '../Planet';
 import Asteroids from '../Asteroids';
 import Coin from '../Coin';
+import Powerup, { PowerupTypes } from '../Powerup';
 import Spaceship from '../Spaceship';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,19 +19,14 @@ const CameraController = ({ isZooming, onZoomComplete }) => {
 
   useEffect(() => {
     if (isZooming) {
-      // Start from a more distant and elevated position
       camera.position.set(0, 15, 30);
-
-      // Create a smooth cinematic zoom
       gsap.to(camera.position, {
         x: 0,
-        y: 4.2, // Slight elevation for better game view
+        y: 4.2,
         z: 6,
         duration: 3,
         ease: "power2.inOut",
-        onComplete: () => {
-          onZoomComplete();
-        }
+        onComplete: onZoomComplete
       });
     }
   }, [isZooming, camera, onZoomComplete]);
@@ -47,35 +44,130 @@ const CanvasLoader = () => {
 };
 
 const Level1 = () => {
+  // Existing state
   const [missionStarted, setMissionStarted] = useState(false);
   const [showRules, setShowRules] = useState(true);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [missionComplete, setMissionComplete] = useState(false);
   const [isZooming, setIsZooming] = useState(false);
+
+  // Powerup states
+  const [activePowerups, setActivePowerups] = useState({
+    coinDoubler: false,
+    booster: false,
+    magnet: false,
+    shooter: false,
+    shield: false,
+    invisibility: false
+  });
+  const [powerupEffects, setPowerupEffects] = useState({
+    speed: 1,
+    coinMultiplier: 1,
+    isInvulnerable: false,
+    isMagnetic: false,
+    hasShooter: false,
+    isInvisible: false
+  });
+
+  // Refs
   const asteroidRefs = useRef(Array.from({ length: 10 }, () => useRef()));
   const coinRefs = useRef(Array.from({ length: 50 }, () => useRef()));
+  const powerupRefs = useRef(Array.from({ length: Object.keys(PowerupTypes).length }, () => useRef()));
   const navigate = useNavigate();
-  const audioRef = useRef(new Audio('/sounds/levels.mp3')); // Load the background music
-  
-  // Use refs for distance tracking to prevent re-renders
-  const distanceRef = useRef(100);
-  const distanceDisplayRef = useRef(100);
+  const audioRef = useRef(new Audio('/sounds/levels.mp3'));
+  const powerupSoundRef = useRef(new Audio('/sounds/powerup.mp3')); // Add powerup sound effect
+
+  // Distance tracking refs
+  const distanceRef = useRef(1000);
+  const distanceDisplayRef = useRef(1000);
   const displayUpdateTimeoutRef = useRef(null);
   const distanceElementRef = useRef(null);
 
-  // Distance reduction effect with RAF
+  // Powerup handling
+  const handlePowerupCollect = (type) => {
+    // Play powerup sound
+    powerupSoundRef.current.currentTime = 0;
+    powerupSoundRef.current.play();
+
+    // Update active powerups
+    setActivePowerups(prev => ({
+      ...prev,
+      [type]: true
+    }));
+
+    // Apply powerup effects
+    switch (type) {
+      case PowerupTypes.COIN_DOUBLER:
+        setPowerupEffects(prev => ({ ...prev, coinMultiplier: 2 }));
+        break;
+      case PowerupTypes.BOOSTER:
+        setPowerupEffects(prev => ({ ...prev, speed: 1.5 }));
+        break;
+      case PowerupTypes.MAGNET:
+        setPowerupEffects(prev => ({ ...prev, isMagnetic: true }));
+        break;
+      case PowerupTypes.SHOOTER:
+        setPowerupEffects(prev => ({ ...prev, hasShooter: true }));
+        break;
+      case PowerupTypes.SHIELD:
+        setPowerupEffects(prev => ({ ...prev, isInvulnerable: true }));
+        break;
+      case PowerupTypes.INVISIBILITY:
+        setPowerupEffects(prev => ({ ...prev, isInvisible: true }));
+        break;
+      default:
+        break;
+    }
+
+    // Set timeout to disable powerup
+    setTimeout(() => {
+      setActivePowerups(prev => ({
+        ...prev,
+        [type]: false
+      }));
+
+      // Reset effects
+      switch (type) {
+        case PowerupTypes.COIN_DOUBLER:
+          setPowerupEffects(prev => ({ ...prev, coinMultiplier: 1 }));
+          break;
+        case PowerupTypes.BOOSTER:
+          setPowerupEffects(prev => ({ ...prev, speed: 1 }));
+          break;
+        case PowerupTypes.MAGNET:
+          setPowerupEffects(prev => ({ ...prev, isMagnetic: false }));
+          break;
+        case PowerupTypes.SHOOTER:
+          setPowerupEffects(prev => ({ ...prev, hasShooter: false }));
+          break;
+        case PowerupTypes.SHIELD:
+          setPowerupEffects(prev => ({ ...prev, isInvulnerable: false }));
+          break;
+        case PowerupTypes.INVISIBILITY:
+          setPowerupEffects(prev => ({ ...prev, isInvisible: false }));
+          break;
+        default:
+          break;
+      }
+    }, 10000); // 10 seconds duration
+  };
+
+  // Handle coin collection with powerup multiplier
+  const handleCoinCollect = () => {
+    setScore(prev => prev + powerupEffects.coinMultiplier);
+  };
+
+  // Existing useEffect for distance tracking
   useEffect(() => {
     let animationFrameId;
     let lastUpdate = performance.now();
-    const updateRate = 100; // Update visual display every 100ms
+    const updateRate = 100;
 
     const updateDistance = (currentTime) => {
       if (missionStarted && !gameOver && !missionComplete) {
-        // Update internal distance
         distanceRef.current = Math.max(0, distanceRef.current - 0.1);
 
-        // Update visual display less frequently
         if (currentTime - lastUpdate >= updateRate) {
           distanceDisplayRef.current = Math.round(distanceRef.current);
           if (distanceElementRef.current) {
@@ -83,7 +175,6 @@ const Level1 = () => {
           }
           lastUpdate = currentTime;
 
-          // Check for mission complete
           if (distanceRef.current <= 0) {
             setMissionComplete(true);
             navigate("/");
@@ -106,14 +197,20 @@ const Level1 = () => {
         clearTimeout(displayUpdateTimeoutRef.current);
       }
     };
-  }, [missionStarted, gameOver, missionComplete]);
+  }, [missionStarted, gameOver, missionComplete, navigate]);
 
+  // Audio handling
   useEffect(() => {
     if (missionStarted) {
       audioRef.current.play();
     } else {
       audioRef.current.pause();
     }
+
+    return () => {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    };
   }, [missionStarted]);
 
   const handleBeginMission = () => {
@@ -126,7 +223,6 @@ const Level1 = () => {
     setShowRules(false);
   };
 
-  // Calculate scale factor based on distance
   const getPlutoScale = () => {
     const minScale = 0.5;
     const maxScale = 2.0;
@@ -164,9 +260,13 @@ const Level1 = () => {
               <Spaceship
                 asteroidRefs={asteroidRefs}
                 coinRefs={coinRefs}
+                powerupRefs={powerupRefs}
                 setGameOver={setGameOver}
                 setScore={setScore}
+                powerupEffects={powerupEffects}
               />
+
+              {/* Coins */}
               {coinRefs.current.map((_, index) => (
                 <Coin
                   key={index}
@@ -175,9 +275,21 @@ const Level1 = () => {
                     Math.random() * 10 - 5,
                     Math.random() * -20 - 10
                   ]}
-                  onCollect={() => {
-                    setScore((prevScore) => prevScore + 1);
-                  }}
+                  onCollect={handleCoinCollect}
+                />
+              ))}
+
+              {/* Powerups */}
+              {Object.values(PowerupTypes).map((type, index) => (
+                <Powerup
+                  key={type}
+                  type={type}
+                  position={[
+                    Math.random() * 10 - 5,
+                    Math.random() * 10 - 5,
+                    Math.random() * -20 - 10
+                  ]}
+                  onCollect={() => handlePowerupCollect(type)}
                 />
               ))}
             </>
@@ -191,16 +303,40 @@ const Level1 = () => {
         </Suspense>
       </Canvas>
 
-      {/* Distance indicator */}
+      {/* HUD Elements */}
       {missionStarted && !gameOver && !missionComplete && (
-        <div 
-          ref={distanceElementRef}
-          className="absolute top-4 right-4 text-white bg-black bg-opacity-50 p-2 rounded"
-        >
-          Distance to Pluto: {distanceDisplayRef.current} km
-        </div>
+        <>
+          {/* Distance indicator */}
+          <div 
+            ref={distanceElementRef}
+            className="absolute top-4 right-4 text-white bg-black bg-opacity-50 p-2 rounded"
+          >
+            Distance to Pluto: {distanceDisplayRef.current} km
+          </div>
+
+          {/* Active powerups display */}
+          <div className="absolute top-16 right-4 text-white bg-black bg-opacity-50 p-2 rounded">
+            <h3 className="text-sm font-bold mb-1">Active Powerups:</h3>
+            <div className="flex flex-col gap-1">
+              {Object.entries(activePowerups).map(([type, isActive]) => (
+                isActive && (
+                  <div key={type} className="text-xs flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+
+          {/* Score display */}
+          <div className="absolute top-4 left-4 text-white bg-black bg-opacity-50 p-2 rounded">
+            Score: {score}
+          </div>
+        </>
       )}
 
+      {/* Game state UI */}
       {!missionStarted && !isZooming && (
         <div className="intro-text absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col z-10 text-white">
           <h1 className="text-5xl font-bold mb-5">NASA Space Mission</h1>
@@ -243,16 +379,17 @@ const Level1 = () => {
   );
 };
 
-Planet.propTypes = {
-  position: PropTypes.array.isRequired,
-  color: PropTypes.string.isRequired,
-  speed: PropTypes.number.isRequired,
-  hasRings: PropTypes.bool.isRequired,
+// PropTypes
+Level1.propTypes = {
+  position: PropTypes.array,
+  color: PropTypes.string,
+  speed: PropTypes.number,
+  hasRings: PropTypes.bool,
 };
 
-Coin.propTypes = {
-  position: PropTypes.array.isRequired,
-  onCollect: PropTypes.func.isRequired,
+CameraController.propTypes = {
+  isZooming: PropTypes.bool.isRequired,
+  onZoomComplete: PropTypes.func.isRequired,
 };
 
 export default Level1;
