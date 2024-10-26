@@ -338,17 +338,26 @@ const Level1 = () => {
 
       {/* Game state UI */}
       {!missionStarted && !isZooming && (
-        <div className="intro-text absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col z-10 text-white">
-          <h1 className="text-5xl font-bold mb-5">NASA Space Mission</h1>
-          <button
-            className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600"
-            onClick={handleBeginMission}
-          >
-            Begin Mission
-          </button>
+        <div className="intro-text absolute top-0 left-0 w-full h-full flex items-center justify-center z-10">
+          <div className="bg-black bg-opacity-50 p-8 rounded-lg text-center">
+            <h1 className="text-5xl font-bold mb-8 text-white">Cosmic Journey</h1>
+            <div className="flex flex-col space-y-4">
+              <button
+                className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 transition-colors"
+                onClick={handleBeginMission}
+              >
+                Begin Mission
+              </button>
+              <button
+                className="bg-purple-500 text-white px-6 py-3 rounded hover:bg-purple-600 transition-colors"
+                onClick={() => { navigate("/store") }}
+              >
+                Go to Space Store
+              </button>
+            </div>
+          </div>
         </div>
       )}
-
       {missionStarted && gameOver && (
         <div className="game-over absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col z-10 text-white">
           <h1 className="text-5xl font-bold mb-5">Game Over</h1>
@@ -392,4 +401,3 @@ CameraController.propTypes = {
   onZoomComplete: PropTypes.func.isRequired,
 };
 
-export default Level1;
