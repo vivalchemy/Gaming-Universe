@@ -1,4 +1,4 @@
-FROM oven/bun:alpine as builder
+FROM oven/bun:alpine AS builder
 
 WORKDIR /app
 
@@ -10,9 +10,6 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Build TypeScript if needed (optional step, depends on your setup)
-RUN bun run build
-
-# Expose the port your app runs on (adjust if necessary)
 EXPOSE 3000
 
 # Start the application
