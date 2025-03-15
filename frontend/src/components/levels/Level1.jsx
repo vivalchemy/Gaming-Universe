@@ -243,18 +243,18 @@ const Level1 = () => {
             isZooming={isZooming}
             onZoomComplete={handleZoomComplete}
           />
-          
+
           <ambientLight intensity={0.5} />
           <pointLight position={[5, 5, 5]} />
           <Stars />
-          
-          <Pluto 
-            isGrowing={missionStarted} 
+
+          <Pluto
+            isGrowing={missionStarted}
             isGameOver={gameOver}
-            scale={getPlutoScale()} 
+            scale={getPlutoScale()}
           />
           <Asteroids asteroidRefs={asteroidRefs} />
-          
+
           {(missionStarted || isZooming) && !gameOver && !missionComplete && (
             <>
               <Spaceship
@@ -294,7 +294,7 @@ const Level1 = () => {
               ))}
             </>
           )}
-          
+
           <OrbitControls
             enableZoom={false}
             maxPolarAngle={Math.PI / 2}
@@ -307,7 +307,7 @@ const Level1 = () => {
       {missionStarted && !gameOver && !missionComplete && (
         <>
           {/* Distance indicator */}
-          <div 
+          <div
             ref={distanceElementRef}
             className="absolute top-4 right-4 text-white bg-black bg-opacity-50 p-2 rounded"
           >
@@ -401,3 +401,4 @@ CameraController.propTypes = {
   onZoomComplete: PropTypes.func.isRequired,
 };
 
+export default Level1;
