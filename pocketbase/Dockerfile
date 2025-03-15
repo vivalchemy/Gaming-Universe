@@ -21,4 +21,4 @@ COPY /pocketbase/pb_migrations /pb/pb_migrations
 EXPOSE 8090
 
 # Run PocketBase with migration execution
-CMD ["cd /pb", "/pb/pocketbase", "serve" , "--http=0.0.0.0:8090"]
+CMD ["/pb/pocketbase", "serve" , "--http=0.0.0.0:8090"]
