@@ -14,7 +14,7 @@ RUN curl -fsSL -o pocketbase.zip "https://github.com/pocketbase/pocketbase/relea
   chmod +x pocketbase
 
 # Copy PocketBase migrations
-COPY pb_migrations /pb/migrations
+COPY /pocketbase/pb_migrations /pb/migrations
 
 # Expose PocketBase default port
 EXPOSE 8090
