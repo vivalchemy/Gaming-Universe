@@ -12,5 +12,9 @@ COPY . .
 # Build TypeScript if needed (optional step, depends on your setup)
 EXPOSE 3000
 
+RUN pwd
+RUN ls /
+RUN ls /app
+
 # Start the application
-CMD ["bun", "run", "/app/index.ts"]
+CMD ["bun", "run", "index.ts"]
