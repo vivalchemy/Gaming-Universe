@@ -15,7 +15,7 @@ RUN curl -fsSL -o pocketbase.zip "https://github.com/pocketbase/pocketbase/relea
 
 
 # Copy PocketBase migrations
-COPY pb_migrations /pb/migrations
+COPY /pocketbase/pb_migrations /pb/migrations
 
 
 RUN ls /
